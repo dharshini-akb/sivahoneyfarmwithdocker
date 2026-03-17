@@ -194,15 +194,20 @@ const Cart = () => {
             <div className="no-featured">No featured honey yet</div>
           ) : (
             <div className="featured-grid">
-              {featuredHoney.map(h => (
-                <div key={h._id} className="featured-card">
-                  <div className="featured-image">
-                    {resolveImageSrc(h.image) ? (
-                      <img src={resolveImageSrc(h.image)} alt={h.name} />
-                    ) : (
-                      <div className="featured-placeholder">No Image</div>
-                    )}
-                  </div>
+              {featuredHoney.map(h => {
+                const hImageSrc = resolveImageSrc(h.image);
+                return (
+                  <div key={h._id} className="featured-card">
+                    <div className="featured-image">
+                      {hImageSrc ? (
+                        <img src={hImageSrc} alt={h.name} onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = FALLBACK_IMAGE;
+                        }} />
+                      ) : (
+                        <div className="featured-placeholder">No Image</div>
+                      )}
+                    </div>
                   <div className="featured-info">
                     <div className="featured-top-actions">
                       <button className="featured-add-btn" onClick={() => addToCart(h._id)}>Add to Cart</button>
@@ -229,11 +234,16 @@ const Cart = () => {
                 const product = products[item.productId];
                 if (!product) return null;
 
+                const imageSrc = resolveImageSrc(product.image);
+
                 return (
                   <div key={item.productId} className="cart-item">
                     <div className="cart-item-image">
-                      {resolveImageSrc(product.image) ? (
-                        <img src={resolveImageSrc(product.image)} alt={product.name} />
+                      {imageSrc ? (
+                        <img src={imageSrc} alt={product.name} onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = FALLBACK_IMAGE;
+                        }} />
                       ) : (
                         <div className="item-placeholder">No Image</div>
                       )}
