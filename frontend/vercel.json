@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://sivahoneyfarmfinalproject-3.onrender.com/api/$1" },
+    { "source": "/products/(.*)", "destination": "https://sivahoneyfarmfinalproject-3.onrender.com/products/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://sivahoneyfarmfinalproject-3.onrender.com/uploads/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
