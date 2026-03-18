@@ -15,7 +15,7 @@ const resolveImageSrc = (image) => {
   // Use relative paths in production to take advantage of Vercel proxy/rewrites.
   // This avoids CSP and CORS issues.
   const isProd = process.env.NODE_ENV === 'production';
-  const base = isProd ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
+  const base = isProd ? '' : (process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000');
   let fullUrl = '';
 
   // If it's a local path starting with products/ or uploads/

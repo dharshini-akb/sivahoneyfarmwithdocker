@@ -13,7 +13,7 @@ const resolveImageSrc = (image) => {
   }
   // If it's a local path starting with products/ or uploads/
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    const base = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
     return `${base}/${trimmed}`;
   }
   if (trimmed.startsWith('images/')) {
@@ -21,7 +21,7 @@ const resolveImageSrc = (image) => {
     return `${base}/${trimmed}`;
   }
   // Default to backend base URL for other paths
-  const base = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
   return `${base}/${trimmed}`;
 };
 
