@@ -8,27 +8,64 @@ console.log('Email configuration check:');
 console.log('- EMAIL_USER:', process.env.EMAIL_USER ? 'Found' : 'MISSING');
 console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? 'Found' : 'MISSING');
 console.log('- ADMIN_EMAIL:', process.env.ADMIN_EMAIL ? 'Found' : 'MISSING');
+console.log('- RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Found' : 'MISSING');
+
+const hasResend = !!process.env.RESEND_API_KEY;
+
+const sendViaResend = async ({ from, to, subject, html }) => {
+  const payload = {
+    from,
+    to,
+    subject,
+    html
+  };
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    let details = '';
+    try {
+      details = await res.text();
+    } catch (e) {
+      details = '';
+    }
+    throw new Error(`Resend API error: ${res.status}${details ? ` - ${details}` : ''}`);
+  }
+
+  return res.json();
+};
 
 // Create transporter with Gmail service configuration (Recommended for Gmail)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false // Necessary for some local environments
-  }
-});
+const transporter = (!hasResend && process.env.EMAIL_USER && process.env.EMAIL_PASS)
+  ? nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    tls: {
+      rejectUnauthorized: false // Necessary for some local environments
+    }
+  })
+  : null;
 
 // Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('SMTP Connection Error Details:', error);
-  } else {
-    console.log('SMTP Server is ready to take our messages');
-  }
-});
+if (transporter) {
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error('SMTP Connection Error Details:', error);
+    } else {
+      console.log('SMTP Server is ready to take our messages');
+    }
+  });
+}
 
 // Send order notification email to admin
 const sendOrderEmail = async (order) => {
@@ -110,7 +147,19 @@ const sendOrderEmail = async (order) => {
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
+      if (hasResend) {
+        await sendViaResend({
+          from: `Siva Honey Form <${fromAddress}>`,
+          to: adminEmail,
+          subject: mailOptions.subject,
+          html: mailOptions.html
+        });
+      } else if (transporter) {
+        await transporter.sendMail(mailOptions);
+      } else {
+        throw new Error('No email provider configured');
+      }
       console.log('Order notification email sent to admin successfully');
     } catch (adminError) {
       console.error('Failed to send admin notification:', adminError.message);
@@ -190,7 +239,19 @@ const sendUserOrderConfirmation = async (order) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
+    if (hasResend) {
+      await sendViaResend({
+        from: `Siva Honey Form <${fromAddress}>`,
+        to: order.user.email,
+        subject: mailOptions.subject,
+        html: mailOptions.html
+      });
+    } else if (transporter) {
+      await transporter.sendMail(mailOptions);
+    } else {
+      throw new Error('No email provider configured');
+    }
     console.log(`Order confirmation email sent to customer: ${order.user.email}`);
   } catch (error) {
     console.error('Failed to send user confirmation email:', error.message);
@@ -233,7 +294,19 @@ const sendContactEmail = async (contactData) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
+    if (hasResend) {
+      await sendViaResend({
+        from: `Siva Honey Form <${fromAddress}>`,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+        html: mailOptions.html
+      });
+    } else if (transporter) {
+      await transporter.sendMail(mailOptions);
+    } else {
+      throw new Error('No email provider configured');
+    }
     console.log(`Contact message email sent to admin from: ${email}`);
     return true;
   } catch (error) {
