@@ -5,10 +5,10 @@ pipeline {
     stages {
 
         stage('Clone Repo') {
-            steps {
-                git 'https://github.com/dharshini-akb/sivahoneyfarmwithdocker.git'
-            }
-        }
+    steps {
+        git branch: 'main', url: 'https://github.com/dharshini-akb/sivahoneyfarmwithdocker.git'
+    }
+}
 
         stage('Terraform Init') {
             steps {
