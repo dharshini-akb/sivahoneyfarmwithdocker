@@ -1,7 +1,7 @@
 {
-  "name": "siva-honey-form-backend",
+  "name": "biobasket-backend",
   "version": "1.0.0",
-  "description": "Backend for Siva Honey Form",
+  "description": "BIOBASKET Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

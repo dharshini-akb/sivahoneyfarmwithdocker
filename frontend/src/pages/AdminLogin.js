@@ -5,12 +5,9 @@ import './UserLogin.css';
 
 const AuthNav = () => (
   <nav className="auth-nav">
-    <Link to="/" className="nav-brand">Siva Honey Form</Link>
+    <Link to="/" className="nav-brand">BIOBASKET</Link>
     <div className="nav-links">
-      <Link to="/">Home</Link>
-      <Link to="/shop">Shop</Link>
-      <Link to="/about">About</Link>
-      <Link to="/contact">Contact</Link>
+      <Link to="/">Back to Store</Link>
     </div>
   </nav>
 );
@@ -44,8 +41,13 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="auth-page">
-      <AuthNav />
+    <div className="admin-login-page">
+      <nav className="admin-nav">
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
+        <div className="nav-links">
+          <Link to="/">Back to Store</Link>
+        </div>
+      </nav>
       <div className="auth-container">
         <div className="auth-form-header">
           <h1>Admin Login</h1>

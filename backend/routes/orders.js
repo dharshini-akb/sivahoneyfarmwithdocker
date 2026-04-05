@@ -90,15 +90,8 @@ router.post('/', auth, async (req, res) => {
 
     await order.save();
 
-    // Send email notification to admin
-    try {
-      await sendOrderEmail(order);
-      order.emailSent = true;
-      await order.save();
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
-      // Don't fail the order if email fails
-    }
+    // Send email notification (asynchronous, don't block response)
+    sendOrderEmail(order._id).catch(err => console.error('Background email error:', err));
 
     res.status(201).json(order);
   } catch (error) {

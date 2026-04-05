@@ -96,7 +96,7 @@ const FooterSection = ({ user, onLogout }) => {
     <footer className="site-footer">
       <div className="footer-grid">
         <div className="footer-col">
-          <h4>About Siva Honey Form</h4>
+          <h4>About BIOBASKET</h4>
           <p>
             We are dedicated to delivering pure honey and organic products
             crafted with traditional methods. From sustainable farms to your home,
@@ -105,9 +105,9 @@ const FooterSection = ({ user, onLogout }) => {
         </div>
         <div className="footer-col">
           <h4>Contact</h4>
-          <p>📍 siva honey farm, panapalayam, unjalur Main Road, Erode-638152</p>
+          <p>📍 BIOBASKET farm, panapalayam, unjalur Main Road, Erode-638152</p>
           <p>📞 9865013205</p>
-          <p>✉️ sivabeefarm@gmail.com</p>
+          <p>✉️ BIOBASKET@gmail.com</p>
         </div>
         <div className="footer-col">
           <h4>Quick Links</h4>
@@ -127,7 +127,7 @@ const FooterSection = ({ user, onLogout }) => {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} Siva Honey Farm. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} BIOBASKET. All rights reserved.</span>
       </div>
     </footer>
   );
@@ -145,7 +145,7 @@ const Home = () => {
       <div className="home-background">
         <div className="home-overlay"></div>
         <nav className="home-nav">
-          <div className="nav-brand">Siva Honey Form</div>
+          <div className="nav-brand">BIOBASKET</div>
           <div className="nav-links">
             <Link to="/">Home</Link>
             <Link to="/shop">Shop</Link>

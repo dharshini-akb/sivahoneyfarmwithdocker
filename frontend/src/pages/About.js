@@ -9,7 +9,7 @@ const About = () => {
   return (
     <div className="about-page">
       <nav className="about-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>
@@ -21,13 +21,13 @@ const About = () => {
 
       <div className="about-container">
         <div className="about-content">
-          <h1>About Siva Honey Form</h1>
+          <h1>About BIOBASKET</h1>
           <p className="about-tagline">Premium Honey & Organic Products</p>
           
           <div className="about-section">
             <h2>Our Story</h2>
             <p>
-              Siva Honey Form is dedicated to providing the finest quality honey and organic products 
+              BIOBASKET is dedicated to providing the finest quality honey and organic products 
               straight from nature. We believe in the power of pure, natural ingredients that have been 
               cherished for generations.
             </p>

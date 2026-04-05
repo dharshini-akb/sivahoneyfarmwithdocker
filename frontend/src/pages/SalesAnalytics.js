@@ -127,7 +127,7 @@ const SalesAnalytics = () => {
   return (
     <div className="sales-analytics-page">
       <nav className="admin-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
           <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/analytics">Analytics</Link>

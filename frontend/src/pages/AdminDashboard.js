@@ -245,14 +245,12 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard-page">
       <nav className="admin-nav">
-        <a href="/" className="nav-brand">Siva Honey Form</a>
+        <div className="nav-brand">BIOBASKET Admin</div>
         <div className="nav-links">
-          <a href="/">Home</a>
-          <a href="/shop">Shop</a>
-          <a href="/orders">My Orders</a>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <button type="button" onClick={handleLogout}>Logout</button>
+          <Link to="/">Store</Link>
+          <Link to="/admin/analytics">Analytics</Link>
+          <Link to="/admin/discussions">Discussions</Link>
+          <button onClick={handleLogout} className="logout-btn">Logout</button>
         </div>
       </nav>
       <div className="admin-dashboard-background">
@@ -327,8 +325,6 @@ const AdminDashboard = () => {
                     <option value="oil">Oil</option>
                     <option value="malt">Malt</option>
                     <option value="washingpowder">Washing Powders</option>
-                    <option value="organic">Organic</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -436,9 +432,7 @@ const AdminDashboard = () => {
                       <option value="oil">Oil</option>
                       <option value="malt">Malt</option>
                       <option value="washingpowder">Washing Powders</option>
-                      <option value="organic">Organic</option>
-                      <option value="other">Other</option>
-                    </select>
+                  </select>
                   </div>
                   <div className="form-group">
                     <label>Stock</label>
@@ -536,7 +530,7 @@ const AdminDashboard = () => {
                         <p><strong>Items:</strong></p>
                         {order.items.map((item, index) => (
                           <div key={index} className="order-item-summary">
-                            {item.quantity}x {item.product?.name || 'Product'} - ₹{item.price.toFixed(2)}
+                            {item.quantity}x {item.product?.name || item.name || 'Product Removed'} - ₹{item.price.toFixed(2)}
                           </div>
                         ))}
                       </div>

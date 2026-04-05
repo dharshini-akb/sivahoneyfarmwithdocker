@@ -1,108 +1,108 @@
 const nodemailer = require('nodemailer');
 const Order = require('../models/Order');
+const User = require('../models/User');
+const Product = require('../models/Product');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-// Debug log to check if environment variables are loaded (excluding actual password for security)
-console.log('Email configuration check:');
-console.log('- EMAIL_USER:', process.env.EMAIL_USER ? 'Found' : 'MISSING');
-console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? 'Found' : 'MISSING');
-console.log('- ADMIN_EMAIL:', process.env.ADMIN_EMAIL ? 'Found' : 'MISSING');
-console.log('- RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'Found' : 'MISSING');
+console.log('[EmailService] Initializing with user:', process.env.EMAIL_USER);
 
-const hasResend = !!process.env.RESEND_API_KEY;
+// Create transporter with Gmail service configuration and pooling enabled
+const createTransporter = () => {
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
 
-const sendViaResend = async ({ from, to, subject, html }) => {
-  const payload = {
-    from,
-    to,
-    subject,
-    html
-  };
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    let details = '';
-    try {
-      details = await res.text();
-    } catch (e) {
-      details = '';
-    }
-    throw new Error(`Resend API error: ${res.status}${details ? ` - ${details}` : ''}`);
+  if (!user || !pass) {
+    console.error('[EmailService] ERROR: EMAIL_USER or EMAIL_PASS not found in environment');
+    return null;
   }
 
-  return res.json();
-};
-
-// Create transporter with Gmail service configuration (Recommended for Gmail)
-const transporter = (!hasResend && process.env.EMAIL_USER && process.env.EMAIL_PASS)
-  ? nodemailer.createTransport({
+  return nodemailer.createTransport({
     service: 'gmail',
+    pool: true, // Use pooling for multiple emails
+    maxConnections: 3,
+    maxMessages: 10,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user: user,
+      pass: pass
     },
     tls: {
-      rejectUnauthorized: false // Necessary for some local environments
+      rejectUnauthorized: false
     }
-  })
-  : null;
+  });
+};
 
-// Verify connection configuration
+const transporter = createTransporter();
+
 if (transporter) {
   transporter.verify(function (error, success) {
     if (error) {
-      console.error('SMTP Connection Error Details:', error);
+      console.error('[EmailService] SMTP Connection Error Details:', error);
     } else {
-      console.log('SMTP Server is ready to take our messages');
+      console.log('[EmailService] SMTP Server is ready to take our messages');
     }
   });
 }
 
-// Send order notification email to admin
-const sendOrderEmail = async (order) => {
+/**
+ * Sends order notification email to admin and confirmation to user.
+ */
+const sendOrderEmail = async (orderId) => {
+  console.log(`[EmailService] Attempting to send order email for ID: ${orderId}`);
   try {
-    // Populate order details
-    const populatedOrder = await Order.findById(order._id)
+    if (!transporter) {
+      throw new Error('Transporter not initialized');
+    }
+
+    const order = await Order.findById(orderId)
       .populate('user', 'name email')
       .populate('items.product', 'name price');
 
+    if (!order) {
+      console.error(`[EmailService] ERROR: Order with ID ${orderId} not found`);
+      return;
+    }
+
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    const customerEmail = order.user?.email;
+    
+    console.log(`[EmailService] Preparing emails. Admin: ${adminEmail}, Customer: ${customerEmail || 'N/A'}`);
 
-    const itemsList = populatedOrder.items.map(item => 
-      `- ${item.product.name} (Qty: ${item.quantity}) - Rs.${(item.price * item.quantity).toFixed(2)}`
-    ).join('\n');
+    const itemsTable = order.items.map(item => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 8px;">${item.product ? item.product.name : (item.name || 'Product Removed')}</td>
+        <td style="text-align: center; padding: 8px;">${item.quantity}</td>
+        <td style="text-align: right; padding: 8px;">Rs.${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `).join('');
 
-    const mailOptions = {
-      from: `"Siva Honey Form" <${process.env.EMAIL_USER}>`,
+    const emailStyle = `
+      font-family: Arial, sans-serif; 
+      max-width: 600px; 
+      margin: 0 auto; 
+      border: 1px solid #ddd; 
+      border-radius: 10px; 
+      overflow: hidden;
+    `;
+
+    // 1. Admin Notification Options
+    const adminMailOptions = {
+      from: `"BIOBASKET" <${process.env.EMAIL_USER}>`,
       to: adminEmail,
-      subject: `New Order Received - Order #${order._id.toString().slice(-6)}`,
+      subject: `New Order Received - Order #${order._id.toString().slice(-6).toUpperCase()}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+        <div style="${emailStyle}">
           <div style="background-color: #8B4513; padding: 20px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0;">New Order Notification</h1>
           </div>
           <div style="padding: 20px;">
-            <p>You have received a new order from Siva Honey Form.</p>
-            
+            <p>You have received a new order from BIOBASKET.</p>
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <h3 style="color: #8B4513; margin-top: 0;">Order Details:</h3>
               <p><strong>Order ID:</strong> #${order._id.toString().toUpperCase()}</p>
-              <p><strong>Customer:</strong> ${populatedOrder.user.name} (${populatedOrder.user.email})</p>
-              <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
-              <p><strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}</p>
-              <p><strong>Payment Status:</strong> ${order.paymentStatus.toUpperCase()}</p>
+              <p><strong>Customer:</strong> ${order.user?.name || 'Guest'} (${customerEmail || 'N/A'})</p>
               <p><strong>Total Amount:</strong> Rs.${order.totalAmount.toFixed(2)}</p>
             </div>
-
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <h3 style="color: #8B4513; margin-top: 0;">Order Items:</h3>
               <table style="width: 100%; border-collapse: collapse;">
@@ -113,92 +113,34 @@ const sendOrderEmail = async (order) => {
                     <th style="text-align: right; padding: 8px;">Price</th>
                   </tr>
                 </thead>
-                <tbody>
-                  ${populatedOrder.items.map(item => `
-                    <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px;">${item.product.name}</td>
-                      <td style="text-align: center; padding: 8px;">${item.quantity}</td>
-                      <td style="text-align: right; padding: 8px;">Rs.${(item.price * item.quantity).toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
+                <tbody>${itemsTable}</tbody>
               </table>
             </div>
-
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Shipping Information:</h3>
-              <p style="margin: 5px 0;"><strong>Name:</strong> ${order.shippingInfo.name}</p>
-              <p style="margin: 5px 0;"><strong>Address:</strong> ${order.shippingInfo.address}</p>
-              <p style="margin: 5px 0;"><strong>City:</strong> ${order.shippingInfo.city}</p>
-              <p style="margin: 5px 0;"><strong>State:</strong> ${order.shippingInfo.state} - ${order.shippingInfo.zipCode}</p>
-              <p style="margin: 5px 0;"><strong>Country:</strong> ${order.shippingInfo.country}</p>
-              <p style="margin: 5px 0;"><strong>Phone:</strong> ${order.shippingInfo.phone}</p>
-            </div>
-
-            <p style="margin-top: 30px; color: #666; font-size: 14px; text-align: center;">
-              Please log in to your admin dashboard to process this order.
-            </p>
-          </div>
-          <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #999;">
-            &copy; ${new Date().getFullYear()} Siva Honey Form. All rights reserved.
           </div>
         </div>
       `
     };
 
-    try {
-      const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
-      if (hasResend) {
-        await sendViaResend({
-          from: `Siva Honey Form <${fromAddress}>`,
-          to: adminEmail,
-          subject: mailOptions.subject,
-          html: mailOptions.html
-        });
-      } else if (transporter) {
-        await transporter.sendMail(mailOptions);
-      } else {
-        throw new Error('No email provider configured');
-      }
-      console.log('Order notification email sent to admin successfully');
-    } catch (adminError) {
-      console.error('Failed to send admin notification:', adminError.message);
-    }
-    
-    // Send confirmation email to user as well
-    await sendUserOrderConfirmation(populatedOrder);
-    
-  } catch (error) {
-    console.error('Error sending order email:', error);
-    // Don't throw, just log to prevent order process from breaking
-  }
-};
-
-// Send order confirmation email to the customer
-const sendUserOrderConfirmation = async (order) => {
-  try {
-    const mailOptions = {
-      from: `"Siva Honey Form" <${process.env.EMAIL_USER}>`,
-      to: order.user.email,
-      subject: `Order Confirmation - Order #${order._id.toString().slice(-6).toUpperCase()}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #8B4513; padding: 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0;">Thank You for Your Order!</h1>
-          </div>
-          <div style="padding: 20px;">
-            <p>Hello ${order.user.name},</p>
-            <p>Your order has been placed successfully. We are getting it ready for you!</p>
-            
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Order Summary:</h3>
-              <p><strong>Order ID:</strong> #${order._id.toString().toUpperCase()}</p>
-              <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-              <p><strong>Total Amount:</strong> Rs.${order.totalAmount.toFixed(2)}</p>
+    // 2. User Confirmation Options (if email exists)
+    let userMailOptions = null;
+    if (customerEmail) {
+      userMailOptions = {
+        from: `"BIOBASKET" <${process.env.EMAIL_USER}>`,
+        to: customerEmail,
+        subject: `Order Confirmation - Order #${order._id.toString().slice(-6).toUpperCase()}`,
+        html: `
+          <div style="${emailStyle}">
+            <div style="background-color: #8B4513; padding: 20px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0;">Thank You for Your Order!</h1>
             </div>
-
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Items Ordered:</h3>
+            <div style="padding: 20px;">
+              <p>Hello ${order.user?.name || 'Valued Customer'},</p>
+              <p>Your order has been placed successfully. We are preparing it for you!</p>
+              <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="color: #8B4513; margin-top: 0;">Order Summary:</h3>
+                <p><strong>Order ID:</strong> #${order._id.toString().toUpperCase()}</p>
+                <p><strong>Total Amount:</strong> Rs.${order.totalAmount.toFixed(2)}</p>
+              </div>
               <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                   <tr style="border-bottom: 1px solid #ddd;">
@@ -207,65 +149,67 @@ const sendUserOrderConfirmation = async (order) => {
                     <th style="text-align: right; padding: 8px;">Price</th>
                   </tr>
                 </thead>
-                <tbody>
-                  ${order.items.map(item => `
-                    <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px;">${item.product.name}</td>
-                      <td style="text-align: center; padding: 8px;">${item.quantity}</td>
-                      <td style="text-align: right; padding: 8px;">Rs.${(item.price * item.quantity).toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
+                <tbody>${itemsTable}</tbody>
               </table>
+              <p style="margin-top: 20px;">We'll notify you when your order is on its way.</p>
             </div>
-
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Shipping to:</h3>
-              <p style="margin: 5px 0;">sivahoneyfarm, panapalayam,</p>
-              <p style="margin: 5px 0;">thamaraipalayam(p.o), unjalur via,</p>
-              <p style="margin: 5px 0;">Erode D.T.</p>
-            </div>
-
-            <p>You can track your order status in your <a href="${process.env.FRONTEND_URL}/orders" style="color: #8B4513; text-decoration: underline;">Order History</a>.</p>
-            
-            <p style="margin-top: 30px; color: #666; font-size: 14px;">
-              If you have any questions, please contact us at <a href="mailto:sivabeefarm@gmail.com" style="color: #8B4513;">sivabeefarm@gmail.com</a>.
-            </p>
           </div>
-          <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #999;">
-            &copy; ${new Date().getFullYear()} Siva Honey Form. All rights reserved.
-          </div>
-        </div>
-      `
-    };
-
-    const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
-    if (hasResend) {
-      await sendViaResend({
-        from: `Siva Honey Form <${fromAddress}>`,
-        to: order.user.email,
-        subject: mailOptions.subject,
-        html: mailOptions.html
-      });
-    } else if (transporter) {
-      await transporter.sendMail(mailOptions);
-    } else {
-      throw new Error('No email provider configured');
+        `
+      };
     }
-    console.log(`Order confirmation email sent to customer: ${order.user.email}`);
+
+    // Send emails
+    const sendPromises = [];
+    
+    // Always send admin notification
+    console.log(`[EmailService] Queuing admin notification...`);
+    sendPromises.push(transporter.sendMail(adminMailOptions).then(res => {
+      console.log(`[EmailService] Admin notification sent: ${res.messageId}`);
+      return { success: true, type: 'admin', id: res.messageId };
+    }).catch(err => {
+      console.error(`[EmailService] Admin notification FAILED:`, err.message);
+      return { success: false, type: 'admin', error: err.message };
+    }));
+
+    // Send customer confirmation if available
+    if (userMailOptions) {
+      console.log(`[EmailService] Queuing customer confirmation...`);
+      sendPromises.push(transporter.sendMail(userMailOptions).then(res => {
+        console.log(`[EmailService] Customer confirmation sent: ${res.messageId}`);
+        return { success: true, type: 'customer', id: res.messageId };
+      }).catch(err => {
+        console.error(`[EmailService] Customer confirmation FAILED:`, err.message);
+        return { success: false, type: 'customer', error: err.message };
+      }));
+    }
+
+    const results = await Promise.all(sendPromises);
+    
+    // If at least one succeeded, mark as emailSent
+    if (results.some(r => r.success)) {
+      order.emailSent = true;
+      await order.save();
+      console.log(`[EmailService] Order updated with emailSent = true`);
+    }
+
   } catch (error) {
-    console.error('Failed to send user confirmation email:', error.message);
+    console.error('[EmailService] CRITICAL ERROR (sendOrderEmail):', error);
   }
 };
 
-// Send contact form message to admin
 const sendContactEmail = async (contactData) => {
+  console.log(`[EmailService] Attempting to send contact email from: ${contactData.email}`);
   try {
+    if (!transporter) {
+      throw new Error('Transporter not initialized');
+    }
+
     const { name, email, message } = contactData;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || "dharshiniakb@gmail.com";
     
     const mailOptions = {
-      from: `"Siva Honey Form Contact" <${process.env.EMAIL_USER}>`,
-      to: "dharshiniakb@gmail.com",
+      from: `"BIOBASKET Contact" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
       subject: `New Contact Message from ${name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
@@ -273,46 +217,22 @@ const sendContactEmail = async (contactData) => {
             <h1 style="color: #ffffff; margin: 0;">New Contact Message</h1>
           </div>
           <div style="padding: 20px;">
-            <p>You have received a new message from your website contact form.</p>
-            
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Sender Details:</h3>
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-            </div>
-
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #8B4513; margin-top: 0;">Message:</h3>
-              <p style="white-space: pre-wrap; line-height: 1.6;">${message}</p>
-            </div>
-          </div>
-          <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #999;">
-            &copy; ${new Date().getFullYear()} Siva Honey Form. All rights reserved.
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap; background-color: #f9f9f9; padding: 15px; border-radius: 5px;">${message}</p>
           </div>
         </div>
       `
     };
 
-    const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
-    if (hasResend) {
-      await sendViaResend({
-        from: `Siva Honey Form <${fromAddress}>`,
-        to: mailOptions.to,
-        subject: mailOptions.subject,
-        html: mailOptions.html
-      });
-    } else if (transporter) {
-      await transporter.sendMail(mailOptions);
-    } else {
-      throw new Error('No email provider configured');
-    }
-    console.log(`Contact message email sent to admin from: ${email}`);
+    const contactResult = await transporter.sendMail(mailOptions);
+    console.log(`[EmailService] Contact email sent successfully: ${contactResult.messageId}`);
     return true;
   } catch (error) {
-    console.error('Failed to send contact email:', error.message);
+    console.error('[EmailService] ERROR (sendContactEmail):', error, error.stack);
     return false;
   }
 };
 
-module.exports = { sendOrderEmail, sendUserOrderConfirmation, sendContactEmail };
+module.exports = { sendOrderEmail, sendContactEmail };

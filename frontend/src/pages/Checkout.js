@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, useStripe, useElements } from '@stripe/react-stripe-js';
 import axios from 'axios';
@@ -400,13 +400,13 @@ const Checkout = () => {
     return (
       <div className="checkout-page">
         <nav className="checkout-nav">
-          <a href="/" className="nav-brand">Siva Honey Form</a>
+          <Link to="/" className="nav-brand">BIOBASKET</Link>
           <div className="nav-links">
-            <a href="/">Home</a>
-            <a href="/shop">Shop</a>
-            <a href="/orders">My Orders</a>
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
+            <Link to="/">Home</Link>
+            <Link to="/shop">Shop</Link>
+            {user && <Link to="/orders">My Orders</Link>}
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
           </div>
         </nav>
         <div className="order-success">
@@ -427,13 +427,13 @@ const Checkout = () => {
   return (
     <div className="checkout-page">
       <nav className="checkout-nav">
-        <a href="/" className="nav-brand">Siva Honey Form</a>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
-          <a href="/">Home</a>
-          <a href="/shop">Shop</a>
-          <a href="/orders">My Orders</a>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
+          <Link to="/">Home</Link>
+          <Link to="/shop">Shop</Link>
+          {user && <Link to="/orders">My Orders</Link>}
+          <Link to="/about">About</Link>
+          <Link to="/contact">Contact</Link>
         </div>
       </nav>
       <div className="checkout-container">

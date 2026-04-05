@@ -37,7 +37,7 @@ const OrderHistory = () => {
     // Add company logo/header
     doc.setFontSize(20);
     doc.setTextColor(139, 69, 19); // #8B4513
-    doc.text('Siva Honey Form', 105, 20, { align: 'center' });
+    doc.text('BIOBASKET', 105, 20, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -72,7 +72,7 @@ const OrderHistory = () => {
 
     // Table Data
     const tableRows = order.items.map(item => [
-      item.product.name,
+      item.product?.name || item.name || 'Product Removed',
       `x${item.quantity}`,
       `Rs. ${item.price.toFixed(2)}`,
       `Rs. ${(item.price * item.quantity).toFixed(2)}`
@@ -100,7 +100,7 @@ const OrderHistory = () => {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text('Thank you for shopping with Siva Honey Form!', 105, 280, { align: 'center' });
+    doc.text('Thank you for shopping with BIOBASKET!', 105, 280, { align: 'center' });
 
     doc.save(`Invoice_${order._id.slice(-6)}.pdf`);
   };
@@ -112,7 +112,7 @@ const OrderHistory = () => {
   return (
     <div className="order-history-page">
       <nav className="order-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>
@@ -158,7 +158,7 @@ const OrderHistory = () => {
                   {order.items.map((item, index) => (
                     <div key={index} className="order-item">
                       <div className="item-info">
-                        <span className="item-name">{item.product.name}</span>
+                        <span className="item-name">{item.product?.name || item.name || 'Product Removed'}</span>
                         <span className="item-qty">x{item.quantity}</span>
                       </div>
                       <div className="item-price">

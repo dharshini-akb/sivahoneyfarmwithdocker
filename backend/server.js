@@ -40,6 +40,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/discussions', require('./routes/discussions'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/sync', require('./routes/sync'));
 
 // MongoDB Connection
 const connectDB = async () => {

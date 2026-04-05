@@ -34,14 +34,13 @@ const AdminDiscussions = () => {
   if (loading) return <div>Loading discussions...</div>;
 
   return (
-    <div className="admin-dashboard-page">
+    <div className="admin-page">
       <nav className="admin-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <div className="nav-brand">BIOBASKET Admin</div>
         <div className="nav-links">
-          <Link to="/admin/dashboard">Dashboard</Link>
+          <Link to="/admin">Dashboard</Link>
           <Link to="/admin/analytics">Analytics</Link>
-          <Link to="/admin/sales">Sales</Link>
-          <Link to="/admin/discussions" className="active">Discussions</Link>
+          <Link to="/">Store</Link>
         </div>
       </nav>
 

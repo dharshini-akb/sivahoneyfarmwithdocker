@@ -1,42 +1,20 @@
-# Siva Honey Form - Premium Honey & Organic Products
+# BIOBASKET - Premium Honey & Organic Products
 
-A full-stack MERN (MongoDB, Express, React, Node.js) e-commerce application for selling premium honey and organic products.
+BIOBASKET is a professional e-commerce platform dedicated to providing high-quality, natural honey and organic products. The platform is built using the MERN stack (MongoDB, Express, React, Node.js) and features a rustic, intuitive design tailored for organic food retail.
 
-## Features
-
-### User Features
-- User registration and login
-- Browse products by category (Honey, Shampoos, Masalas, Soaps, Organic)
-- Product search functionality
-- Add products to shopping cart
-- Secure checkout with multiple payment methods (Stripe, PayPal)
-- Order tracking
-
-### Admin Features
-- Admin login
-- Add, edit, and delete products
-- Upload product images
-- View dashboard with statistics (Total Products, Orders, Sales)
-- View and manage orders
-- Receive email notifications for new orders
+## Key Features
+- **Responsive Storefront**: Elegant and user-friendly shop interface with category filtering.
+- **Advanced Admin Dashboard**: Real-time sales analytics and inventory management using Chart.js.
+- **Automated Communication**: Instant order notifications via SMTP email service.
+- **Secure Authentication**: JWT-based user and admin authentication.
+- **Data Synchronization API**: High-reliability API with built-in timeouts and descriptive error handling.
 
 ## Tech Stack
-
-### Backend
-- Node.js
-- Express.js
-- MongoDB with Mongoose
-- JWT Authentication
-- Multer (File uploads)
-- Nodemailer (Email notifications)
-- Stripe (Payment processing)
-
-### Frontend
-- React.js
-- React Router
-- Axios
-- Stripe React Components
-- Custom CSS with rustic wooden theme
+- **Frontend**: React.js, Context API, CSS3
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB Atlas
+- **Email**: Nodemailer (SMTP)
+- **Charts**: Chart.js / react-chartjs-2
 
 ## Installation
 

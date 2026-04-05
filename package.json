@@ -1,7 +1,7 @@
 {
-  "name": "siva-honey-form",
+  "name": "biobasket",
   "version": "1.0.0",
-  "description": "Siva Honey Form - Premium Honey & Organic Products",
+  "description": "BIOBASKET - Premium Honey & Organic Products",
   "main": "server.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",

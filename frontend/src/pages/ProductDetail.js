@@ -271,7 +271,7 @@ const ProductDetail = () => {
   return (
     <div className="product-detail-page">
       <nav className="product-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>

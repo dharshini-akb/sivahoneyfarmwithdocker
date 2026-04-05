@@ -5,7 +5,7 @@ import './UserLogin.css';
 
 const AuthNav = () => (
   <nav className="auth-nav">
-    <Link to="/" className="nav-brand">Siva Honey Form</Link>
+    <Link to="/" className="nav-brand">BIOBASKET</Link>
     <div className="nav-links">
       <Link to="/">Home</Link>
       <Link to="/shop">Shop</Link>

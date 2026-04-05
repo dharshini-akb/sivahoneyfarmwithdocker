@@ -107,15 +107,13 @@ const Shop = () => {
     { value: 'soap', label: 'Soaps' },
     { value: 'oil', label: 'Oil' },
     { value: 'malt', label: 'Malt' },
-    { value: 'washingpowder', label: 'Washing Powders' },
-    { value: 'organic', label: 'Organic' },
-    { value: 'other', label: 'Other' }
+    { value: 'washingpowder', label: 'Washing Powders' }
   ];
 
   return (
     <div className="shop-page">
       <nav className="shop-nav">
-        <Link to="/" className="nav-brand">Siva Honey Form</Link>
+        <Link to="/" className="nav-brand">BIOBASKET</Link>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>
