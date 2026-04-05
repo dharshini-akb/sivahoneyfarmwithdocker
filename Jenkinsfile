@@ -1,24 +1,11 @@
-
 pipeline {
     agent any
 
     stages {
 
         stage('Clone Repo') {
-    steps {
-        git branch: 'main', url: 'https://github.com/dharshini-akb/sivahoneyfarmwithdocker.git'
-    }
-}
-
-        stage('Terraform Init') {
             steps {
-                sh 'cd terraform && terraform init'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                sh 'cd terraform && terraform apply -auto-approve'
+                git branch: 'main', url: 'https://github.com/dharshini-akb/sivahoneyfarmwithdocker.git'
             }
         }
 
@@ -30,7 +17,7 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh 'docker run -d -p 80:80 honeyfarm'
+                sh 'docker run -d -p 80:80 honeyfarm || true'
             }
         }
     }
