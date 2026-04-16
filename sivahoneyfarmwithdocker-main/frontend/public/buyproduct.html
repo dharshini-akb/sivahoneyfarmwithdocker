@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buy Product</title>
+  <style>
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#fafafa; color:#333; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .header { padding: 16px 20px; background: linear-gradient(135deg,#8B4513,#A0522D); color:#fff; }
+    .header a { color:#fff; text-decoration:none; font-weight:600; }
+    .card { display:grid; grid-template-columns: 1fr 1fr; gap: 24px; background:#fff; padding: 20px; border-radius: 10px; box-shadow:0 4px 15px rgba(0,0,0,0.08); margin-top: 20px; }
+    .image { width: 100%; height: 420px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:8px; }
+    .image img { width:100%; height:100%; object-fit: cover; }
+    .title { font-size: 28px; color:#8B4513; margin: 0 0 8px; }
+    .price { font-size: 24px; font-weight:700; color:#228B22; margin: 8px 0; }
+    .desc { color:#555; line-height:1.6; margin: 10px 0 16px; }
+    .actions { display:flex; gap: 12px; margin-top: 12px; }
+    .btn { padding: 12px 16px; border:none; border-radius:8px; cursor:pointer; font-weight:700; }
+    .btn-cart { background:#228B22; color:#fff; }
+    .btn-buy { background:#8B4513; color:#fff; }
+    .meta { display:flex; align-items:center; gap:12px; margin: 8px 0 12px; }
+    .like { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:2px solid #e0e0e0; background:#fff; border-radius:999px; cursor:pointer; }
+    .like.liked { border-color:#ff4757; background:#ffecef; }
+    .reviews { margin-top: 16px; border-top:1px solid #eee; padding-top: 12px; }
+    .review-form { display:grid; gap:8px; }
+    .review-form input, .review-form textarea { padding:10px; border:1px solid #ddd; border-radius:6px; }
+    .stars { display:inline-flex; gap:6px; }
+    .star { background:none; border:none; font-size:20px; cursor:pointer; color:#bbb; }
+    .star.active { color:#f5a623; }
+    .review-list { display:grid; gap:8px; margin-top:8px; }
+    .review-item { background:#fafafa; border:1px solid #eee; border-radius:6px; padding:10px; }
+    .review-head { display:flex; justify-content: space-between; }
+    @media (max-width: 900px) { .card { grid-template-columns: 1fr; } .image { height: 340px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="container"><a href="/shop">← Back to Shop</a></div>
+  </div>
+  <div class="container">
+    <div id="content" class="card" aria-busy="true">
+      <div class="image"><span>Loading...</span></div>
+      <div>
+        <h1 class="title">Loading...</h1>
+        <p class="price"></p>
+        <p class="desc"></p>
+        <div class="meta">
+          <button id="likeBtn" class="like"><span>❤️</span><span id="likeCount">0</span></button>
+          <span id="reviewsCount"></span>
+        </div>
+        <div class="actions">
+          <button id="addToCart" class="btn btn-cart">Add to Cart</button>
+          <button id="buyNow" class="btn btn-buy">Buy Now</button>
+        </div>
+        <div class="reviews">
+          <h3>Reviews</h3>
+          <div class="review-form">
+            <input id="rName" type="text" placeholder="Your name" />
+            <div id="rStars" class="stars" aria-label="Rating"></div>
+            <textarea id="rComment" placeholder="Write your review..."></textarea>
+            <button id="rSubmit" class="btn btn-cart" type="button">Submit Review</button>
+          </div>
+          <div id="rList" class="review-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const API_BASE = '';
+      const FALLBACK = "/images/placeholder.svg";
+
+      const likesKey = "product_likes";
+      const reviewsKey = "product_reviews";
+      const getLikes = () => JSON.parse(localStorage.getItem(likesKey) || "{}");
+      const setLikes = (o) => localStorage.setItem(likesKey, JSON.stringify(o));
+      const getReviews = () => JSON.parse(localStorage.getItem(reviewsKey) || "{}");
+      const setReviews = (o) => localStorage.setItem(reviewsKey, JSON.stringify(o));
+
+      const likeBtn = document.getElementById("likeBtn");
+      const likeCountEl = document.getElementById("likeCount");
+      const reviewsCountEl = document.getElementById("reviewsCount");
+      const addToCartBtn = document.getElementById("addToCart");
+      const buyNowBtn = document.getElementById("buyNow");
+      const rName = document.getElementById("rName");
+      const rStars = document.getElementById("rStars");
+      const rComment = document.getElementById("rComment");
+      const rSubmit = document.getElementById("rSubmit");
+      const rList = document.getElementById("rList");
+      const content = document.getElementById("content");
+
+      let selectedRating = 0;
+      for (let i = 1; i <= 5; i++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "star";
+        b.textContent = "★";
+        b.dataset.value = String(i);
+        b.addEventListener("click", () => {
+          selectedRating = i;
+          [...rStars.children].forEach(st => st.classList.toggle("active", Number(st.dataset.value) <= i));
+        });
+        rStars.appendChild(b);
+      }
+
+      function resolveImage(src) {
+        if (!src) return '';
+        const t = src.replace(/^\/+/, '');
+        if (t.startsWith('http') || t.startsWith('data:')) return src;
+        return '/' + t;
+      }
+
+      function renderProduct(p) {
+        content.setAttribute('aria-busy', 'false');
+        // Image
+        const imgWrap = content.querySelector('.image');
+        imgWrap.innerHTML = '';
+        const img = document.createElement('img');
+        img.alt = p.name || 'product';
+        img.src = resolveImage(p.image) || FALLBACK;
+        img.onerror = () => { if (img.src !== FALLBACK) img.src = FALLBACK; };
+        imgWrap.appendChild(img);
+
+        content.querySelector('.title').textContent = p.name || 'Product';
+        content.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(2);
+        content.querySelector('.desc').textContent = p.description || '';
+      }
+
+      function loadLikeState() {
+        const store = getLikes();
+        const current = store[id] || { count: 0, liked: false };
+        likeCountEl.textContent = current.count;
+        likeBtn.classList.toggle("liked", current.liked);
+      }
+
+      likeBtn.addEventListener('click', () => {
+        const store = getLikes();
+        const current = store[id] || { count: 0, liked: false };
+        const next = { count: current.liked ? Math.max(0, current.count - 1) : current.count + 1, liked: !current.liked };
+        store[id] = next;
+        setLikes(store);
+        likeCountEl.textContent = next.count;
+        likeBtn.classList.toggle("liked", next.liked);
+      });
+
+      async function fetchDiscussions() {
+        try {
+          const res = await fetch(`/api/discussions/${encodeURIComponent(id)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          renderReviews(data.comments);
+          reviewsCountEl.textContent = `Reviews (${data.totalReviews})`;
+        } catch (e) { console.error(e); }
+      }
+
+      function renderReviews(comments) {
+        rList.innerHTML = "";
+        if (!comments || comments.length === 0) {
+          rList.innerHTML = '<div class="no-reviews">No reviews yet</div>';
+          return;
+        }
+        comments.forEach(r => {
+          const div = document.createElement("div");
+          div.className = "review-item";
+          div.innerHTML = `
+            <div class="review-head">
+              <strong>${r.userName}</strong>
+              <span>${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}</span>
+            </div>
+            <div style="font-size:14px; margin-top:4px;">${r.message}</div>
+          `;
+          rList.appendChild(div);
+        });
+      }
+
+      rSubmit.addEventListener('click', async () => {
+        if (!isLoggedIn()) {
+          window.location.href = '/login';
+          return;
+        }
+        const name = rName.value.trim();
+        const comment = rComment.value.trim();
+        if (!comment || selectedRating === 0) {
+          alert("Please provide a rating and a comment");
+          return;
+        }
+        try {
+          const token = getToken();
+          const res = await fetch('/api/discussions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              productId: id,
+              message: comment,
+              rating: selectedRating
+            })
+          });
+          if (res.ok) {
+            rComment.value = "";
+            selectedRating = 0;
+            [...rStars.children].forEach(st => st.classList.remove('active'));
+            fetchDiscussions();
+          } else {
+            alert("Failed to submit review");
+          }
+        } catch (e) { alert("Error submitting review"); }
+      });
+
+      function getToken() {
+        return localStorage.getItem('token') || localStorage.getItem('authToken') || '';
+      }
+
+      function isLoggedIn() {
+        const t = getToken();
+        return !!t;
+      }
+
+      addToCartBtn.addEventListener('click', async () => {
+        if (!isLoggedIn()) {
+          window.location.href = '/login';
+          return;
+        }
+        // Skip server call for filesystem-only IDs
+        if (id && id.startsWith('fs_')) {
+          window.location.href = '/cart';
+          return;
+        }
+        try {
+          const token = getToken();
+          const res = await fetch('/api/cart', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ productId: id, quantity: 1 })
+          });
+          if (res.ok) {
+            window.location.href = '/cart';
+          } else if (res.status === 401) {
+            window.location.href = '/login';
+          } else {
+            alert('Failed to add to cart');
+          }
+        } catch (e) { alert('Failed to add to cart'); }
+      });
+
+      buyNowBtn.addEventListener('click', async () => {
+        if (!isLoggedIn()) {
+          window.location.href = '/login';
+          return;
+        }
+        // For filesystem-only IDs, skip server cart API and go to checkout
+        if (id && id.startsWith('fs_')) {
+          window.location.href = '/checkout';
+          return;
+        }
+        try {
+          const token = getToken();
+          const res = await fetch('/api/cart', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ productId: id, quantity: 1 })
+          });
+          if (res.ok) {
+            window.location.href = '/checkout';
+          } else if (res.status === 401) {
+            window.location.href = '/login';
+          } else {
+            alert('Failed to buy');
+          }
+        } catch (e) { alert('Failed to buy'); }
+      });
+
+      async function fetchProduct() {
+        try {
+          if (id && id.startsWith('fs_')) {
+            const res = await fetch('/api/products?source=uploads');
+            const list = await res.json();
+            const item = list.find(p => String(p._id) === id);
+            if (item) renderProduct(item);
+            else throw new Error('Not found');
+          } else {
+            const res = await fetch(`/api/products/${encodeURIComponent(id)}`);
+            if (!res.ok) throw new Error('Fetch error');
+            const data = await res.json();
+            renderProduct(data);
+          }
+        } catch (e) {
+          content.setAttribute('aria-busy', 'false');
+          content.innerHTML = '<div>Product not found</div>';
+        } finally {
+          loadLikeState();
+          fetchDiscussions();
+        }
+      }
+
+      if (!id) {
+        content.setAttribute('aria-busy', 'false');
+        content.innerHTML = '<div>Missing product id</div>';
+        return;
+      }
+      fetchProduct();
+    })();
+  </script>
+</body>
+</html>

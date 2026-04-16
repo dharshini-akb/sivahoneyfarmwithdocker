@@ -1,0 +1,261 @@
+.sales-analytics-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f5dc 0%, #fff8dc 100%);
+}
+
+.analytics-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.header-text h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  color: #8B4513;
+  margin: 0 0 5px 0;
+}
+
+.header-text p {
+  font-size: 16px;
+  color: #654321;
+  margin: 0;
+}
+
+.header-filters {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.header-filters select {
+  padding: 10px 15px;
+  border: 2px solid #8B4513;
+  border-radius: 8px;
+  background: #fff;
+  color: #8B4513;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.period-btns {
+  display: flex;
+  gap: 5px;
+  background: #fff;
+  padding: 5px;
+  border-radius: 8px;
+  border: 2px solid #8B4513;
+}
+
+.period-btns button {
+  padding: 8px 15px;
+  border: none;
+  background: transparent;
+  color: #8B4513;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.period-btns button.active {
+  background: #8B4513;
+  color: #fff;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.summary-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.3s;
+}
+
+.summary-card:hover {
+  transform: translateY(-5px);
+}
+
+.card-label {
+  font-size: 14px;
+  color: #654321;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #228B22;
+  margin: 8px 0;
+}
+
+.card-growth {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-growth.positive { color: #228B22; }
+.card-growth.negative { color: #c62828; }
+
+.card-subtext {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+}
+
+.card-icon {
+  width: 50px;
+  height: 50px;
+  background: #f5f5dc;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  color: #8B4513;
+}
+
+.charts-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.chart-wrapper {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.chart-wrapper.span-2 {
+  grid-column: 1 / span 2;
+}
+
+.chart-wrapper h3 {
+  font-size: 18px;
+  color: #8B4513;
+  margin: 0 0 20px 0;
+  border-bottom: 1px solid #f5f5dc;
+  padding-bottom: 10px;
+}
+
+.chart-content {
+  height: 350px;
+  width: 100%;
+}
+
+.heatmap-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+}
+
+.activity-map {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.activity-cell {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: #ebedf0;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.activity-cell:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+.heatmap-labels {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #654321;
+}
+
+.heatmap-scale {
+  display: flex;
+  gap: 4px;
+}
+
+.heatmap-scale div {
+  width: 15px;
+  height: 15px;
+  border-radius: 2px;
+}
+
+.heatmap-desc {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.analytics-loading {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  color: #8B4513;
+  background: #f5f5dc;
+}
+
+@media (max-width: 1200px) {
+  .charts-main-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-wrapper.span-2 {
+    grid-column: 1 / span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .header-filters {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .header-filters select {
+    width: 100%;
+  }
+  
+  .period-btns {
+    width: 100%;
+    justify-content: space-around;
+  }
+}
