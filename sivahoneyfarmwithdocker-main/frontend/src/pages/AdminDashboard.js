@@ -11,17 +11,16 @@ const resolveImageSrc = (image) => {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
     return image;
   }
+  const base = 'http://43.205.180.31:5000';
   // If it's a local path starting with products/ or uploads/
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://43.205.180.31:5000';
     return `${base}/${trimmed}`;
   }
   if (trimmed.startsWith('images/')) {
-    const base = process.env.PUBLIC_URL || '';
-    return `${base}/${trimmed}`;
+    const publicBase = process.env.PUBLIC_URL || '';
+    return `${publicBase}/${trimmed}`;
   }
   // Default to backend base URL for other paths
-  const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://43.205.180.31:5000';
   return `${base}/${trimmed}`;
 };
 

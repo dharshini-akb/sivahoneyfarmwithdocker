@@ -13,21 +13,18 @@ const resolveImageSrc = (image) => {
     return image;
   }
   
-  // Use relative paths in production to take advantage of Vercel proxy/rewrites.
-  // This avoids CSP and CORS issues.
-  const isProd = process.env.NODE_ENV === 'production';
-  const base = isProd ? '' : (process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://43.205.180.31:5000');
+  const base = 'http://43.205.180.31:5000';
   let fullUrl = '';
 
   // If it's a local path starting with products/ or uploads/
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    fullUrl = base ? `${base}/${trimmed}` : `/${trimmed}`;
+    fullUrl = `${base}/${trimmed}`;
   } else if (trimmed.startsWith('images/')) {
     const publicBase = process.env.PUBLIC_URL || '';
     fullUrl = `${publicBase}/${trimmed}`;
   } else {
     // Default to products folder
-    fullUrl = base ? `${base}/products/${trimmed}` : `/products/${trimmed}`;
+    fullUrl = `${base}/products/${trimmed}`;
   }
 
   // Handle spaces in filenames
