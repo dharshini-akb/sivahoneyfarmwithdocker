@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .image-preview {
+            margin-top: 20px;
+            max-width: 100%;
+        }
+        .image-preview img {
+            max-width: 300px;
+            max-height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Image Upload</h1>
+    
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="imageFile">Select Image:</label>
+            <input type="file" id="imageFile" accept="image/*" required>
+        </div>
+        <button type="submit">Upload Image</button>
+    </form>
+
+    <div id="result"></div>
+    <div id="imagePreview"></div>
+
+    <h2>Uploaded Files</h2>
+    <button onclick="loadFiles()">Refresh Files</button>
+    <div id="filesList"></div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+        const imagePreviewDiv = document.getElementById('imagePreview');
+        const filesListDiv = document.getElementById('filesList');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('imageFile');
+            formData.append('image', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('http://localhost:5000/test-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>Upload Successful!</h3>
+                            <p>Filename: ${data.filename}</p>
+                            <p>Original name: ${data.originalname}</p>
+                            <p>Size: ${(data.size / 1024).toFixed(2)} KB</p>
+                            <p>URL: <a href="${data.url}" target="_blank">${data.url}</a></p>
+                        </div>
+                    `;
+                    
+                    imagePreviewDiv.innerHTML = `
+                        <div class="image-preview">
+                            <h3>Image Preview:</h3>
+                            <img src="${data.url}" alt="Uploaded image">
+                        </div>
+                    `;
+                    
+                    // Clear form
+                    uploadForm.reset();
+                    
+                    // Refresh files list
+                    loadFiles();
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>Upload Failed</h3>
+                            <p>${data.error || 'Unknown error'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Network Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('http://localhost:5000/test-files');
+                const data = await response.json();
+                
+                if (data.files && data.files.length > 0) {
+                    filesListDiv.innerHTML = `
+                        <ul>
+                            ${data.files.map(file => `
+                                <li>
+                                    <a href="${file.url}" target="_blank">${file.name}</a>
+                                    <br>
+                                    <img src="${file.url}" alt="${file.name}" style="max-width: 100px; max-height: 100px; margin-top: 5px;">
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    filesListDiv.innerHTML = '<p>No files uploaded yet.</p>';
+                }
+            } catch (error) {
+                filesListDiv.innerHTML = `<p>Error loading files: ${error.message}</p>`;
+            }
+        }
+
+        // Load files on page load
+        loadFiles();
+    </script>
+</body>
+</html>
