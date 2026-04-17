@@ -6,8 +6,17 @@ import './Shop.css';
 
 const resolveImageSrc = (image) => {
   if (!image) return '';
-  const trimmed = image.replace(/^\/+/, '');
-  // If it's already a full URL, return it as is
+  // Clean up backslashes and double slashes
+  const cleaned = image.replace(/\\/g, '/').replace(/\/+/g, '/');
+  const trimmed = cleaned.replace(/^\/+/, '');
+  
+  // If it's already a full URL (including localhost), we want to fix it if it's localhost
+  if (trimmed.startsWith('http://localhost:5000')) {
+    const fixed = trimmed.replace('http://localhost:5000', 'http://43.205.180.31:5000');
+    return encodeURI(fixed);
+  }
+
+  // If it's already a full URL (correct one or other external), return it
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
     return image;
   }
