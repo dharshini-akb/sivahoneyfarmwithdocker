@@ -6,22 +6,40 @@ import './AdminDashboard.css';
 
 const resolveImageSrc = (image) => {
   if (!image) return '';
-  const trimmed = image.replace(/^\/+/, '').replace(/\\/g, '/');
-  // If it's already a full URL, return it as is
+  // Clean up backslashes and double slashes
+  const cleaned = image.replace(/\\/g, '/').replace(/\/+/g, '/');
+  const trimmed = cleaned.replace(/^\/+/, '');
+  
+  // If it's already a full URL (including localhost), fix it
+  if (trimmed.startsWith('http://localhost:5000')) {
+    return encodeURI(trimmed.replace('http://localhost:5000', 'http://43.205.180.31:5000'));
+  }
+
+  // If it's a full URL or data URI, return it
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
     return image;
   }
+  
   const base = 'http://43.205.180.31:5000';
-  // If it's a local path starting with products/ or uploads/
+  let fullUrl = '';
+
+  // Handle common prefixes or default
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    return `${base}/${trimmed}`;
-  }
-  if (trimmed.startsWith('images/')) {
+    fullUrl = `${base}/${trimmed}`;
+  } else if (trimmed.startsWith('images/')) {
     const publicBase = process.env.PUBLIC_URL || '';
-    return `${publicBase}/${trimmed}`;
+    fullUrl = `${publicBase}/${trimmed}`;
+  } else {
+    // If it has a timestamp-like prefix (starts with 17...), it's likely in uploads
+    if (/^\d{13}-/.test(trimmed)) {
+      fullUrl = `${base}/uploads/${trimmed}`;
+    } else {
+      // Default to products folder
+      fullUrl = `${base}/products/${trimmed}`;
+    }
   }
-  // Default to backend base URL for other paths
-  return `${base}/${trimmed}`;
+
+  return encodeURI(fullUrl);
 };
 
 const AdminDashboard = () => {
