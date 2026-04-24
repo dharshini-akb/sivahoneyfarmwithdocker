@@ -129,20 +129,26 @@ router.post('/admin/login', [
 
     const { email, password } = req.body;
 
+    console.log(`Admin login attempt for: ${email}`);
+
     const user = await User.findOne({ email });
     if (!user) {
+      console.log(`Admin login failed: User not found (${email})`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     if (user.role !== 'admin') {
+      console.log(`Admin login failed: User is not an admin (${email}, role: ${user.role})`);
       return res.status(403).json({ message: 'Admin account required' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log(`Admin login failed: Password mismatch for ${email}`);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    console.log(`Admin login successful: ${email}`);
     const token = generateToken(user._id);
 
     res.json({

@@ -7,41 +7,42 @@ import './Shop.css';
 const resolveImageSrc = (image) => {
   if (!image) return '';
   
-  // 1. Basic cleanup
-  let cleaned = image.toString().replace(/\\/g, '/').replace(/\/+/g, '/');
-  let trimmed = cleaned.replace(/^\/+/, '');
+  // 1. Clean up the input
+  let trimmed = image.toString().replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+/, '');
   
-  // 2. Handle absolute URLs pointing to localhost
+  // 2. Fix legacy localhost URLs
   if (trimmed.toLowerCase().includes('localhost:5000')) {
-    trimmed = trimmed.replace(/http:\/\/localhost:5000/i, 'http://43.205.180.31:5000');
-    return encodeURI(trimmed);
+    trimmed = trimmed.replace(/http:\/\/localhost:5000/i, '');
+    trimmed = trimmed.replace(/^\/+/, ''); // Remove any leading slash left over
   }
 
-  // 3. If it's already a full valid URL or data URI, return it
-  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) {
+  // 3. If it's already a correct absolute URL or data URI, return it
+  if (/^http:\/\/43\.205\.180\.31:5000/i.test(trimmed) || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+  if (/^https?:\/\//i.test(trimmed) && !trimmed.includes('localhost')) {
     return trimmed;
   }
   
   const base = 'http://43.205.180.31:5000';
-  let fullUrl = '';
 
-  // 4. Determine folder based on prefix or pattern
+  // 4. Handle known folder patterns
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    fullUrl = `${base}/${trimmed}`;
-  } else if (trimmed.startsWith('images/')) {
+    return `${base}/${trimmed}`;
+  }
+  
+  if (trimmed.startsWith('images/')) {
     const publicBase = process.env.PUBLIC_URL || '';
-    fullUrl = `${publicBase}/${trimmed}`;
-  } else if (/^\d{13}-/.test(trimmed)) {
-    // Files starting with 13-digit timestamp are usually in uploads
-    fullUrl = `${base}/uploads/${trimmed}`;
-  } else {
-    // Default fallback - try products first as it's the standard for new uploads
-    fullUrl = `${base}/products/${trimmed}`;
+    return `${publicBase}/${trimmed}`;
   }
 
-  const result = encodeURI(fullUrl);
-  // Optional: console.log(`Resolved image: ${image} -> ${result}`);
-  return result;
+  // 5. Smart folder detection for raw filenames
+  if (/^\d{13}-/.test(trimmed)) {
+    return `${base}/uploads/${trimmed}`;
+  }
+
+  // Default to products folder
+  return `${base}/products/${trimmed}`;
 };
 
 const FALLBACK_IMAGE = `${process.env.PUBLIC_URL || ''}/images/placeholder.svg`;

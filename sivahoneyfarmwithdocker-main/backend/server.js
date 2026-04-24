@@ -58,6 +58,26 @@ connectDB();
 
 const PORT = process.env.PORT || 5000;
 
+// Diagnostic route
+app.get('/api/health', async (req, res) => {
+  const fs = require('fs');
+  const uploadsExists = fs.existsSync(path.join(__dirname, 'uploads'));
+  const productsExists = fs.existsSync(path.join(__dirname, 'public/products'));
+  
+  res.json({
+    status: 'ok',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    directories: {
+      uploads: uploadsExists ? 'exists' : 'missing',
+      products: productsExists ? 'exists' : 'missing'
+    },
+    env: {
+      PORT: process.env.PORT || 5000,
+      NODE_ENV: process.env.NODE_ENV || 'development'
+    }
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
