@@ -17,11 +17,27 @@ function toTitleCase(str) {
 
 function readUploadsAsProducts() {
   try {
-    const files = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })
-      .filter(ent => ent.isFile() && ALLOWED_IMAGE_EXT.has(path.extname(ent.name).toLowerCase()))
-      .map(ent => ent.name);
-    return files.map((file, idx) => {
-      const lowerFile = file.toLowerCase();
+    const UPLOADS_DIR = path.join(__dirname, '../uploads');
+    const PRODUCTS_DIR = path.join(__dirname, '../public/products');
+    
+    let files = [];
+    
+    // Try uploads folder first
+    if (fs.existsSync(UPLOADS_DIR)) {
+      files = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })
+        .filter(ent => ent.isFile() && ALLOWED_IMAGE_EXT.has(path.extname(ent.name).toLowerCase()))
+        .map(ent => ({ name: ent.name, folder: 'uploads' }));
+    }
+    
+    // If empty, try public/products folder
+    if (files.length === 0 && fs.existsSync(PRODUCTS_DIR)) {
+      files = fs.readdirSync(PRODUCTS_DIR, { withFileTypes: true })
+        .filter(ent => ent.isFile() && ALLOWED_IMAGE_EXT.has(path.extname(ent.name).toLowerCase()))
+        .map(ent => ({ name: ent.name, folder: 'products' }));
+    }
+
+    return files.map((f, idx) => {
+      const lowerFile = f.name.toLowerCase();
       let category = 'organic';
       if (lowerFile.includes('honey')) category = 'honey';
       else if (lowerFile.includes('shampoo')) category = 'shampoo';
@@ -32,19 +48,19 @@ function readUploadsAsProducts() {
       else if (lowerFile.includes('washing')) category = 'washingpowder';
 
       return {
-        _id: `fs_${idx}_${file}`,
-        name: toTitleCase(file),
+        _id: `fs_${idx}_${f.name}`,
+        name: toTitleCase(f.name),
         description: '',
         price: 500,
         category: category,
         stock: 100,
-        image: `uploads/${file}`,
+        image: `${f.folder}/${f.name}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
     });
   } catch (e) {
-    console.error('Error reading uploads directory:', e);
+    console.error('Error reading directories:', e);
     return [];
   }
 }
