@@ -44,6 +44,7 @@ function readUploadsAsProducts() {
       };
     });
   } catch (e) {
+    console.error('Error reading uploads directory:', e);
     return [];
   }
 }
@@ -54,6 +55,13 @@ function readUploadsAsProducts() {
 router.get('/', async (req, res) => {
   try {
     const { category, featured, search, source, fs: fsFlag } = req.query;
+    
+    // Check if MongoDB is connected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('MongoDB not connected, falling back to filesystem products');
+      return res.json(readUploadsAsProducts());
+    }
+
     if (source === 'uploads' || fsFlag === 'true') {
       const fsProducts = readUploadsAsProducts();
       // Optional category/search filtering for fs products
@@ -84,15 +92,20 @@ router.get('/', async (req, res) => {
     }
 
     const products = await Product.find(query).sort({ createdAt: -1 });
-    if (products.length > 0) {
+    if (products && products.length > 0) {
       return res.json(products);
     }
+    
     // Fallback to filesystem products if DB is empty
     const fsProducts = readUploadsAsProducts();
     return res.json(fsProducts);
   } catch (error) {
     console.error('Get products error:', error);
-    res.status(500).json({ message: 'Error fetching products' });
+    res.status(500).json({ 
+      message: 'Error fetching products', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

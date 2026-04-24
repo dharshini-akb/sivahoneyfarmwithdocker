@@ -6,40 +6,42 @@ import './Shop.css';
 
 const resolveImageSrc = (image) => {
   if (!image) return '';
-  // Clean up backslashes and double slashes
-  const cleaned = image.replace(/\\/g, '/').replace(/\/+/g, '/');
-  const trimmed = cleaned.replace(/^\/+/, '');
   
-  // If it's already a full URL (including localhost), fix it
-  if (trimmed.startsWith('http://localhost:5000')) {
-    return encodeURI(trimmed.replace('http://localhost:5000', 'http://43.205.180.31:5000'));
+  // 1. Basic cleanup
+  let cleaned = image.toString().replace(/\\/g, '/').replace(/\/+/g, '/');
+  let trimmed = cleaned.replace(/^\/+/, '');
+  
+  // 2. Handle absolute URLs pointing to localhost
+  if (trimmed.toLowerCase().includes('localhost:5000')) {
+    trimmed = trimmed.replace(/http:\/\/localhost:5000/i, 'http://43.205.180.31:5000');
+    return encodeURI(trimmed);
   }
 
-  // If it's a full URL or data URI, return it
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
-    return image;
+  // 3. If it's already a full valid URL or data URI, return it
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) {
+    return trimmed;
   }
   
   const base = 'http://43.205.180.31:5000';
   let fullUrl = '';
 
-  // Handle common prefixes or default
+  // 4. Determine folder based on prefix or pattern
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
     fullUrl = `${base}/${trimmed}`;
   } else if (trimmed.startsWith('images/')) {
     const publicBase = process.env.PUBLIC_URL || '';
     fullUrl = `${publicBase}/${trimmed}`;
+  } else if (/^\d{13}-/.test(trimmed)) {
+    // Files starting with 13-digit timestamp are usually in uploads
+    fullUrl = `${base}/uploads/${trimmed}`;
   } else {
-    // If it has a timestamp-like prefix (starts with 17...), it's likely in uploads
-    if (/^\d{13}-/.test(trimmed)) {
-      fullUrl = `${base}/uploads/${trimmed}`;
-    } else {
-      // Default to products folder
-      fullUrl = `${base}/products/${trimmed}`;
-    }
+    // Default fallback - try products first as it's the standard for new uploads
+    fullUrl = `${base}/products/${trimmed}`;
   }
 
-  return encodeURI(fullUrl);
+  const result = encodeURI(fullUrl);
+  // Optional: console.log(`Resolved image: ${image} -> ${result}`);
+  return result;
 };
 
 const FALLBACK_IMAGE = `${process.env.PUBLIC_URL || ''}/images/placeholder.svg`;
