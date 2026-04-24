@@ -23,9 +23,20 @@ router.post('/', auth, async (req, res) => {
     let totalItemsCount = 0;
 
     for (const item of items) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        return res.status(404).json({ message: `Product ${item.productId} not found` });
+      let product;
+      if (item.productId.startsWith('fs_')) {
+        // Filesystem product - use mock data
+        product = { 
+          _id: item.productId, 
+          name: 'Product', 
+          price: item.price || 500,
+          category: 'organic'
+        };
+      } else {
+        product = await Product.findById(item.productId);
+        if (!product) {
+          return res.status(404).json({ message: `Product ${item.productId} not found` });
+        }
       }
 
       if (product.stock < item.quantity) {

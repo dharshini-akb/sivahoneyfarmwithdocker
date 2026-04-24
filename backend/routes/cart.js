@@ -17,13 +17,31 @@ router.get('/', auth, async (req, res) => {
       await cart.save();
     }
 
-    const items = cart.items
-      .filter(item => item.product) // Only return items where product exists
-      .map(item => ({
-        productId: item.product._id,
-        quantity: item.quantity,
-        product: item.product
-      }));
+    // Handle filesystem products in GET cart
+    const items = cart.items.map(item => {
+      if (item.product && item.product.toString().startsWith('fs_')) {
+        // Extract filename from fs_#_filename format
+        const filename = item.product.toString().replace(/^fs_\d+_/, '');
+        return {
+          productId: item.product,
+          quantity: item.quantity,
+          product: {
+            _id: item.product,
+            name: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            price: item.price || 500,
+            image: `uploads/${filename}`,
+            category: 'organic'
+          }
+        };
+      } else if (item.product) {
+        return {
+          productId: item.product._id,
+          quantity: item.quantity,
+          product: item.product
+        };
+      }
+      return null;
+    }).filter(item => item !== null);
 
     res.json({ items, total: cart.totalAmount });
   } catch (error) {
@@ -39,10 +57,16 @@ router.post('/', auth, async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-    // Validate product
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+    // Validate product (handle filesystem products)
+    let product;
+    if (productId.startsWith('fs_')) {
+      // Filesystem product - don't check DB
+      product = { _id: productId, price: 500 };
+    } else {
+      product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
     }
 
     let cart = await Cart.findOne({ user: req.user.id });
@@ -67,13 +91,31 @@ router.post('/', auth, async (req, res) => {
     }
 
     await cart.save();
-    await cart.populate('items.product', 'name price image category');
 
-    const items = cart.items.map(item => ({
-      productId: item.product._id,
-      quantity: item.quantity,
-      product: item.product
-    }));
+    // Handle filesystem products
+    const items = cart.items.map(item => {
+      if (item.product.toString().startsWith('fs_')) {
+        // Extract filename from fs_#_filename format
+        const filename = item.product.toString().replace(/^fs_\d+_/, '');
+        return {
+          productId: item.product,
+          quantity: item.quantity,
+          product: {
+            _id: item.product,
+            name: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            price: item.price || 500,
+            image: `uploads/${filename}`,
+            category: 'organic'
+          }
+        };
+      } else {
+        return {
+          productId: item.product._id,
+          quantity: item.quantity,
+          product: item.product
+        };
+      }
+    });
 
     res.json({ items, total: cart.totalAmount });
   } catch (error) {

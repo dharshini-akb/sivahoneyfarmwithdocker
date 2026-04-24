@@ -55,6 +55,7 @@ const Shop = () => {
         if (searchTerm) {
           params.search = searchTerm;
         }
+        params.fs = 'true'; // Force use of filesystem products
         const res = await axios.get('/api/products', { params });
         setProducts(res.data);
       } catch (error) {

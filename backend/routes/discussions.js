@@ -8,15 +8,18 @@ const { auth, adminAuth } = require('../middleware/auth');
 // @desc    Get all top-level comments for a product
 router.get('/:productId', async (req, res) => {
   try {
+    const productId = req.params.productId;
+    console.log('Fetching discussions for productId:', productId);
+    
     const comments = await Comment.find({ 
-      product: req.params.productId,
+      product: productId,
       parentComment: null 
     })
     .sort({ createdAt: -1 });
     
     // Calculate average rating
     const ratings = await Comment.find({ 
-      product: req.params.productId,
+      product: productId,
       rating: { $gt: 0 }
     });
     
@@ -26,6 +29,7 @@ router.get('/:productId', async (req, res) => {
 
     res.json({ comments, avgRating, totalReviews: ratings.length });
   } catch (err) {
+    console.error('Discussions GET error:', err);
     res.status(500).json({ message: 'Server Error' });
   }
 });
@@ -35,6 +39,11 @@ router.get('/:productId', async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { productId, message, rating, parentCommentId } = req.body;
+    console.log('POST discussion:', { productId, message, rating, parentCommentId });
+
+    if (!productId || !message) {
+      return res.status(400).json({ message: 'Product ID and message are required' });
+    }
 
     const newComment = new Comment({
       product: productId,
@@ -55,7 +64,8 @@ router.post('/', auth, async (req, res) => {
 
     res.json(savedComment);
   } catch (err) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Discussions POST error:', err);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 });
 

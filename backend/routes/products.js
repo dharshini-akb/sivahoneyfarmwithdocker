@@ -10,9 +10,13 @@ const ALLOWED_IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
 
 function toTitleCase(str) {
   return str
-    .replace(/[-_]+/g, ' ')
-    .replace(/\.\w+$/, '')
-    .replace(/\b\w/g, c => c.toUpperCase());
+    .replace(/^\d+-/, '') // Remove leading timestamp
+    .replace(/^Gemini[_\s]+Generated[_\s]+Image[_\s]*/gi, '') // Remove "Gemini Generated Image" with underscores/spaces
+    .replace(/[-_]+/g, ' ') // Replace dashes/underscores with spaces
+    .replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') // Remove file extension
+    .replace(/\b\w/g, c => c.toUpperCase()) // Capitalize words
+    .replace(/\s+/g, ' ') // Clean extra spaces
+    .trim();
 }
 
 function readUploadsAsProducts() {
@@ -30,6 +34,7 @@ function readUploadsAsProducts() {
       else if (lowerFile.includes('oil')) category = 'oil';
       else if (lowerFile.includes('malt')) category = 'malt';
       else if (lowerFile.includes('washing')) category = 'washingpowder';
+      else if (lowerFile.includes('naval') || lowerFile.includes('navalhoney')) category = 'honey';
 
       return {
         _id: `fs_${idx}_${file}`,
