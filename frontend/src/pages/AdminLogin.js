@@ -63,7 +63,7 @@ const AdminLogin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="admin@sivahoneyform.com"
+              placeholder="admin@sivahoneyfarm.com"
             />
           </div>
           <div className="form-group">

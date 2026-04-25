@@ -50,7 +50,7 @@ const connectDB = async () => {
     
     // Seed Admin if not exists
     const User = require('./models/User');
-    const adminEmail = 'admin@sivahoneyfarm@gmail.com';
+    const adminEmail = 'admin@sivahoneyfarm.com';
     const adminExists = await User.findOne({ email: adminEmail });
     if (!adminExists) {
       console.log('Seeding admin user...');
