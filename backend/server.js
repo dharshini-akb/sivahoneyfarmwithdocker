@@ -47,6 +47,22 @@ const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sivahoneyform');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    // Seed Admin if not exists
+    const User = require('./models/User');
+    const adminEmail = 'admin@sivahoneyfarm@gmail.com';
+    const adminExists = await User.findOne({ email: adminEmail });
+    if (!adminExists) {
+      console.log('Seeding admin user...');
+      const admin = new User({
+        name: 'Admin',
+        email: adminEmail,
+        password: 'admin123',
+        role: 'admin'
+      });
+      await admin.save();
+      console.log('Admin user seeded successfully');
+    }
   } catch (err) {
     console.error('MongoDB Connection Error:', err.message);
     // Don't exit process in production, let Render handle restarts
