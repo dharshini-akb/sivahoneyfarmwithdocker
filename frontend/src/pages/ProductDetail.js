@@ -5,6 +5,15 @@ import { AuthContext } from '../context/AuthContext';
 import './ProductDetail.css';
 import './DiscussionSystem.css';
 
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
 const resolveImageSrc = (image) => {
   if (!image) return '';
   const trimmed = image.replace(/^\/+/, '');
@@ -13,7 +22,7 @@ const resolveImageSrc = (image) => {
     return image;
   }
   
-  const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || '';
+  const base = getApiBaseUrl();
   let fullUrl = '';
 
   // If it's a local path starting with products/ or uploads/

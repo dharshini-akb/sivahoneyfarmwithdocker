@@ -4,19 +4,25 @@ const Comment = require('../models/Comment');
 const Product = require('../models/Product');
 const { auth, adminAuth } = require('../middleware/auth');
 
+const mongoose = require('mongoose');
+
 // @route   GET /api/discussions/:productId
 // @desc    Get all top-level comments for a product
 router.get('/:productId', async (req, res) => {
   try {
+    const productId = req.params.productId;
+    console.log('Fetching discussions for productId:', productId);
+    
+    // Use the productId directly (could be ObjectId or string for filesystem products)
     const comments = await Comment.find({ 
-      product: req.params.productId,
+      product: productId,
       parentComment: null 
     })
     .sort({ createdAt: -1 });
     
     // Calculate average rating
     const ratings = await Comment.find({ 
-      product: req.params.productId,
+      product: productId,
       rating: { $gt: 0 }
     });
     
@@ -35,6 +41,11 @@ router.get('/:productId', async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { productId, message, rating, parentCommentId } = req.body;
+    console.log('POST discussion:', { productId, message, rating, parentCommentId });
+
+    if (!productId || !message) {
+      return res.status(400).json({ message: 'Product ID and message are required' });
+    }
 
     const newComment = new Comment({
       product: productId,

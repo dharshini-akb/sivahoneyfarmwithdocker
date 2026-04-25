@@ -4,6 +4,15 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import './Shop.css';
 
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
 const resolveImageSrc = (image) => {
   if (!image) return '';
   
@@ -16,16 +25,16 @@ const resolveImageSrc = (image) => {
     trimmed = trimmed.replace(/^\/+/, ''); // Remove any leading slash left over
   }
 
+  const base = getApiBaseUrl();
+
   // 3. If it's already a correct absolute URL or data URI, return it
-  if (/^http:\/\/43\.205\.180\.31:5000/i.test(trimmed) || trimmed.startsWith('data:')) {
+  if (trimmed.startsWith(base) || trimmed.startsWith('data:')) {
     return trimmed;
   }
   if (/^https?:\/\//i.test(trimmed) && !trimmed.includes('localhost')) {
     return trimmed;
   }
   
-  const base = 'http://43.205.180.31:5000';
-
   // 4. Handle known folder patterns
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
     return `${base}/${trimmed}`;

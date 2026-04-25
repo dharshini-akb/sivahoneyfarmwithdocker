@@ -7,6 +7,15 @@ import { AuthContext } from '../context/AuthContext';
 import './Checkout.css';
 import './QRModal.css';
 
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
 const resolveImageSrc = (image) => {
   if (!image) return '';
   const trimmed = image.replace(/^\/+/, '');
@@ -14,18 +23,23 @@ const resolveImageSrc = (image) => {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
     return image;
   }
+  
+  const base = getApiBaseUrl();
+  let fullUrl = '';
+
   // If it's a local path starting with products/ or uploads/
   if (trimmed.startsWith('products/') || trimmed.startsWith('uploads/')) {
-    const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    return `${base}/${trimmed}`;
+    fullUrl = base ? `${base}/${trimmed}` : `/${trimmed}`;
+  } else if (trimmed.startsWith('images/')) {
+    const publicBase = process.env.PUBLIC_URL || '';
+    fullUrl = `${publicBase}/${trimmed}`;
+  } else {
+    // Default to products folder
+    fullUrl = base ? `${base}/products/${trimmed}` : `/products/${trimmed}`;
   }
-  if (trimmed.startsWith('images/')) {
-    const base = process.env.PUBLIC_URL || '';
-    return `${base}/${trimmed}`;
-  }
-  // Default to backend base URL for other paths
-  const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
-  return `${base}/${trimmed}`;
+
+  // Handle spaces in filenames
+  return encodeURI(fullUrl);
 };
 
 const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY 

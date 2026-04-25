@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 
 const router = express.Router();
@@ -15,7 +16,7 @@ function toTitleCase(str) {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function readUploadsAsProducts() {
+async function readUploadsAsProducts() {
   try {
     const UPLOADS_DIR = path.join(__dirname, '../uploads');
     const PRODUCTS_DIR = path.join(__dirname, '../public/products');
@@ -36,7 +37,8 @@ function readUploadsAsProducts() {
         .map(ent => ({ name: ent.name, folder: 'products' }));
     }
 
-    return files.map((f, idx) => {
+    const products = [];
+    for (const [idx, f] of files.entries()) {
       const lowerFile = f.name.toLowerCase();
       let category = 'organic';
       if (lowerFile.includes('honey')) category = 'honey';
@@ -47,18 +49,50 @@ function readUploadsAsProducts() {
       else if (lowerFile.includes('malt')) category = 'malt';
       else if (lowerFile.includes('washing')) category = 'washingpowder';
 
-      return {
-        _id: `fs_${idx}_${f.name}`,
-        name: toTitleCase(f.name),
-        description: '',
-        price: 500,
-        category: category,
-        stock: 100,
-        image: `${f.folder}/${f.name}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-    });
+      const imagePath = `${f.folder}/${f.name}`;
+      
+      // Try to find existing product by image path or name
+      let dbProduct = null;
+      if (mongoose.connection.readyState === 1) {
+        dbProduct = await Product.findOne({ 
+          $or: [
+            { image: imagePath },
+            { name: toTitleCase(f.name) }
+          ]
+        });
+
+        if (!dbProduct) {
+          // Create it if it doesn't exist
+          dbProduct = new Product({
+            name: toTitleCase(f.name),
+            description: `Premium ${toTitleCase(f.name)} from Siva Honey Farm.`,
+            price: 500,
+            category: category,
+            stock: 100,
+            image: imagePath
+          });
+          await dbProduct.save();
+        }
+      }
+
+      if (dbProduct) {
+        products.push(dbProduct);
+      } else {
+        // Fallback if DB is not connected
+        products.push({
+          _id: `fs_${idx}_${f.name}`,
+          name: toTitleCase(f.name),
+          description: '',
+          price: 500,
+          category: category,
+          stock: 100,
+          image: imagePath,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+    return products;
   } catch (e) {
     console.error('Error reading directories:', e);
     return [];
@@ -75,11 +109,12 @@ router.get('/', async (req, res) => {
     // Check if MongoDB is connected
     if (mongoose.connection.readyState !== 1) {
       console.warn('MongoDB not connected, falling back to filesystem products');
-      return res.json(readUploadsAsProducts());
+      const fsProds = await readUploadsAsProducts();
+      return res.json(fsProds);
     }
 
     if (source === 'uploads' || fsFlag === 'true') {
-      const fsProducts = readUploadsAsProducts();
+      const fsProducts = await readUploadsAsProducts();
       // Optional category/search filtering for fs products
       const filtered = fsProducts.filter(p => {
         let ok = true;
@@ -113,7 +148,7 @@ router.get('/', async (req, res) => {
     }
     
     // Fallback to filesystem products if DB is empty
-    const fsProducts = readUploadsAsProducts();
+    const fsProducts = await readUploadsAsProducts();
     return res.json(fsProducts);
   } catch (error) {
     console.error('Get products error:', error);
@@ -132,12 +167,16 @@ router.get('/:id', async (req, res) => {
   try {
     const id = req.params.id;
     if (id.startsWith('fs_')) {
-      const fsProducts = readUploadsAsProducts();
-      const product = fsProducts.find(p => p._id === id);
+      const fsProducts = await readUploadsAsProducts();
+      const product = fsProducts.find(p => p._id.toString() === id);
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
       return res.json(product);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: 'Invalid product ID format' });
     }
 
     const product = await Product.findById(id);

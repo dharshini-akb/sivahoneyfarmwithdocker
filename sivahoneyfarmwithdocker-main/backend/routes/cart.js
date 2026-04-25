@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { auth } = require('../middleware/auth');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
@@ -38,6 +39,10 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { productId, quantity } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: 'Invalid product ID format' });
+    }
 
     // Validate product
     const product = await Product.findById(productId);
@@ -87,7 +92,12 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.put('/:productId', auth, async (req, res) => {
   try {
+    const { productId } = req.params;
     const { quantity } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: 'Invalid product ID format' });
+    }
 
     if (quantity <= 0) {
       return res.status(400).json({ message: 'Quantity must be greater than 0' });
@@ -100,7 +110,7 @@ router.put('/:productId', auth, async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      item => item.product.toString() === req.params.productId
+      item => item.product.toString() === productId
     );
     
     if (itemIndex === -1) {
@@ -129,6 +139,12 @@ router.put('/:productId', auth, async (req, res) => {
 // @access  Private
 router.delete('/:productId', auth, async (req, res) => {
   try {
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: 'Invalid product ID format' });
+    }
+
     let cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
@@ -136,7 +152,7 @@ router.delete('/:productId', auth, async (req, res) => {
     }
 
     cart.items = cart.items.filter(
-      item => item.product.toString() !== req.params.productId
+      item => item.product.toString() !== productId
     );
 
     await cart.save();

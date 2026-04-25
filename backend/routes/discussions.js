@@ -11,6 +11,7 @@ router.get('/:productId', async (req, res) => {
     const productId = req.params.productId;
     console.log('Fetching discussions for productId:', productId);
     
+    // Use the productId directly (could be ObjectId or string for filesystem products)
     const comments = await Comment.find({ 
       product: productId,
       parentComment: null 

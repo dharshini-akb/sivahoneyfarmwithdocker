@@ -4,6 +4,15 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import './AdminDashboard.css';
 
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
 const resolveImageSrc = (image) => {
   if (!image) return '';
   
@@ -11,9 +20,12 @@ const resolveImageSrc = (image) => {
   let cleaned = image.toString().replace(/\\/g, '/').replace(/\/+/g, '/');
   let trimmed = cleaned.replace(/^\/+/, '');
   
-  // 2. Handle absolute URLs pointing to localhost
-  if (trimmed.toLowerCase().includes('localhost:5000')) {
-    trimmed = trimmed.replace(/http:\/\/localhost:5000/i, 'http://43.205.180.31:5000');
+  const base = getApiBaseUrl();
+
+  // 2. Handle absolute URLs pointing to localhost or old IP
+  if (trimmed.toLowerCase().includes('localhost:5000') || trimmed.toLowerCase().includes('43.205.180.31:5000')) {
+    trimmed = trimmed.replace(/http:\/\/localhost:5000/i, base);
+    trimmed = trimmed.replace(/http:\/\/43\.205\.180\.31:5000/i, base);
     return encodeURI(trimmed);
   }
 
@@ -22,7 +34,6 @@ const resolveImageSrc = (image) => {
     return trimmed;
   }
   
-  const base = 'http://43.205.180.31:5000';
   let fullUrl = '';
 
   // 4. Determine folder based on prefix or pattern
