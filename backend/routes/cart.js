@@ -10,40 +10,48 @@ const router = express.Router();
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    let cart = await Cart.findOne({ user: req.user.id }).populate('items.product', 'name price image category');
+    let cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
       cart = new Cart({ user: req.user.id, items: [] });
       await cart.save();
     }
 
-    // Handle filesystem products in GET cart
-    const items = cart.items.map(item => {
-      if (item.product && item.product.toString().startsWith('fs_')) {
+    // Manually populate product items since some might be filesystem IDs
+    const items = await Promise.all(cart.items.map(async (item) => {
+      const productId = item.product.toString();
+      
+      if (productId.startsWith('fs_')) {
         // Extract filename from fs_#_filename format
-        const filename = item.product.toString().replace(/^fs_\d+_/, '');
+        const filename = productId.replace(/^fs_\d+_/, '');
         return {
-          productId: item.product,
+          productId: productId,
           quantity: item.quantity,
+          price: item.price,
           product: {
-            _id: item.product,
+            _id: productId,
             name: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
             price: item.price || 500,
             image: `uploads/${filename}`,
             category: 'organic'
           }
         };
-      } else if (item.product) {
-        return {
-          productId: item.product._id,
-          quantity: item.quantity,
-          product: item.product
-        };
+      } else {
+        const product = await Product.findById(item.product).select('name price image category');
+        if (product) {
+          return {
+            productId: product._id,
+            quantity: item.quantity,
+            price: item.price,
+            product: product
+          };
+        }
       }
       return null;
-    }).filter(item => item !== null);
+    }));
 
-    res.json({ items, total: cart.totalAmount });
+    const filteredItems = items.filter(item => item !== null);
+    res.json({ items: filteredItems, total: cart.totalAmount });
   } catch (error) {
     console.error('Get cart error:', error);
     res.status(500).json({ message: 'Error fetching cart' });

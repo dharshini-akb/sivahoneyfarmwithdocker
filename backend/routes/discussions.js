@@ -17,6 +17,22 @@ router.get('/:productId', async (req, res) => {
       parentComment: null 
     })
     .sort({ createdAt: -1 });
+
+    // Recursively populate replies
+    const populateReplies = async (commentList) => {
+      return await Promise.all(commentList.map(async (comment) => {
+        const commentObj = comment.toObject();
+        if (comment.replies && comment.replies.length > 0) {
+          const replies = await Comment.find({ _id: { $in: comment.replies } }).sort({ createdAt: 1 });
+          commentObj.replies = await populateReplies(replies);
+        } else {
+          commentObj.replies = [];
+        }
+        return commentObj;
+      }));
+    };
+
+    const populatedComments = await populateReplies(comments);
     
     // Calculate average rating
     const ratings = await Comment.find({ 
@@ -28,7 +44,7 @@ router.get('/:productId', async (req, res) => {
       ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
       : 0;
 
-    res.json({ comments, avgRating, totalReviews: ratings.length });
+    res.json({ comments: populatedComments, avgRating, totalReviews: ratings.length });
   } catch (err) {
     console.error('Discussions GET error:', err);
     res.status(500).json({ message: 'Server Error' });
@@ -113,10 +129,31 @@ router.delete('/:id', adminAuth, async (req, res) => {
 router.get('/admin/all', adminAuth, async (req, res) => {
   try {
     const comments = await Comment.find()
-      .populate('product', 'name')
       .sort({ createdAt: -1 });
-    res.json(comments);
+    
+    // Manually populate product names for filesystem products
+    const populatedComments = await Promise.all(comments.map(async (comment) => {
+      const commentObj = comment.toObject();
+      if (comment.product && comment.product.toString().startsWith('fs_')) {
+        // Mock product object for filesystem products
+        const filename = comment.product.toString().replace(/^fs_\d+_/, '');
+        commentObj.product = {
+          _id: comment.product,
+          name: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        };
+      } else if (comment.product) {
+        // Try to find in DB
+        const product = await Product.findById(comment.product).select('name');
+        if (product) {
+          commentObj.product = product;
+        }
+      }
+      return commentObj;
+    }));
+
+    res.json(populatedComments);
   } catch (err) {
+    console.error('Admin discussions GET error:', err);
     res.status(500).json({ message: 'Server Error' });
   }
 });
