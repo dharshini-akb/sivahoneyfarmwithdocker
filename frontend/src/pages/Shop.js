@@ -106,6 +106,34 @@ const Shop = () => {
     });
   };
 
+  const addToCart = async (productId) => {
+    try {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      await axios.post('/api/cart', { productId, quantity: 1 });
+      alert('Added to cart!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Failed to add to cart');
+    }
+  };
+
+  const buyNow = async (productId) => {
+    try {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      await axios.post('/api/cart', { productId, quantity: 1 });
+      navigate('/cart');
+    } catch (error) {
+      console.error('Error in buy now:', error);
+      alert('Failed to process buy now');
+    }
+  };
+
   const categories = [
     { value: 'all', label: 'All Products' },
     { value: 'honey', label: 'Honey' },
@@ -209,6 +237,22 @@ const Shop = () => {
                         onClick={(e) => { e.stopPropagation(); navigate(`/product/${product._id}`); }}
                       >
                         View Details & Reviews
+                      </button>
+                    </div>
+                    <div className="product-actions-grid">
+                      <button
+                        type="button"
+                        className="add-to-cart-btn-small"
+                        onClick={(e) => { e.stopPropagation(); addToCart(product._id); }}
+                      >
+                        Add to Cart
+                      </button>
+                      <button
+                        type="button"
+                        className="buy-now-btn-small"
+                        onClick={(e) => { e.stopPropagation(); buyNow(product._id); }}
+                      >
+                        Buy Now
                       </button>
                     </div>
                   </div>

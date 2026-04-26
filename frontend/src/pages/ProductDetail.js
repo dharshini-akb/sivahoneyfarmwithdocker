@@ -226,7 +226,7 @@ const ProductDetail = () => {
   const handleAddToCart = async () => {
     if (!user) {
       navigate('/login');
-      return;
+      return false;
     }
 
     setAddingToCart(true);
@@ -236,9 +236,11 @@ const ProductDetail = () => {
         quantity: quantity
       });
       alert('Product added to cart!');
+      return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
       alert('Failed to add product to cart');
+      return false;
     } finally {
       setAddingToCart(false);
     }
@@ -250,8 +252,10 @@ const ProductDetail = () => {
       return;
     }
 
-    await handleAddToCart();
-    navigate('/checkout');
+    const success = await handleAddToCart();
+    if (success) {
+      navigate('/cart');
+    }
   };
 
   const toggleLike = () => {

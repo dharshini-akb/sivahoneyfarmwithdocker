@@ -48,7 +48,6 @@ const Cart = () => {
   const [products, setProducts] = useState({});
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const [featuredHoney, setFeaturedHoney] = useState([]);
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -56,7 +55,6 @@ const Cart = () => {
 
   useEffect(() => {
     fetchCart();
-    fetchFeaturedHoney();
   }, []);
 
   const calculateTotal = useCallback(() => {
@@ -107,41 +105,6 @@ const Cart = () => {
       console.error('Error fetching cart:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchFeaturedHoney = async () => {
-    try {
-      const res = await axios.get('/api/products', { params: { category: 'honey', featured: 'true' } });
-      setFeaturedHoney(res.data);
-    } catch (error) {
-      console.error('Error fetching featured honey:', error);
-    }
-  };
-
-  const addToCart = async (productId) => {
-    try {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      await axios.post('/api/cart', { productId, quantity: 1 });
-      await fetchCart();
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-    }
-  };
-
-  const buyNow = async (productId) => {
-    try {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      await axios.post('/api/cart', { productId, quantity: 1 });
-      navigate('/checkout');
-    } catch (error) {
-      console.error('Error in buy now:', error);
     }
   };
 
@@ -196,43 +159,8 @@ const Cart = () => {
         </div>
       </nav>
 
-      <div className="cart-container">
+    <div className="cart-container">
         <h1 className="cart-title">Shopping Cart</h1>
-        <div className="featured-honey-section">
-          <h2 className="featured-title">Honey Varieties</h2>
-          <p className="featured-subtitle">Premium honey selections</p>
-          {featuredHoney.length === 0 ? (
-            <div className="no-featured">No featured honey yet</div>
-          ) : (
-            <div className="featured-grid">
-              {featuredHoney.map(h => {
-                const hImageSrc = resolveImageSrc(h.image);
-                return (
-                  <div key={h._id} className="featured-card">
-                    <div className="featured-image">
-                      {hImageSrc ? (
-                        <img src={hImageSrc} alt={h.name} onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = FALLBACK_IMAGE;
-                        }} />
-                      ) : (
-                        <div className="featured-placeholder">No Image</div>
-                      )}
-                    </div>
-                  <div className="featured-info">
-                    <div className="featured-top-actions">
-                      <button className="featured-add-btn" onClick={() => addToCart(h._id)}>Add to Cart</button>
-                    </div>
-                    <h3 className="featured-name">{h.name}</h3>
-                    <p className="featured-price">₹{h.price.toFixed(2)}</p>
-                    <button className="featured-buy-btn" onClick={() => buyNow(h._id)}>Buy Now</button>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         {cart.items.length === 0 ? (
           <div className="empty-cart">
