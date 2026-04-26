@@ -66,6 +66,9 @@ router.post('/products', adminAuth, upload.single('image'), async (req, res) => 
 router.put('/products/:id', adminAuth, upload.single('image'), async (req, res) => {
   try {
     const { name, description, price, category, stock, featured, imageUrl } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid product ID' });
+    }
     const product = await Product.findById(req.params.id);
     
     if (!product) {
@@ -98,6 +101,9 @@ router.put('/products/:id', adminAuth, upload.single('image'), async (req, res) 
 // @access  Private (Admin)
 router.delete('/products/:id', adminAuth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid product ID' });
+    }
     const product = await Product.findById(req.params.id);
     
     if (!product) {

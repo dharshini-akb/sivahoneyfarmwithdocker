@@ -32,11 +32,13 @@ router.post('/', auth, async (req, res) => {
           price: item.price || 500,
           category: 'organic'
         };
-      } else {
+      } else if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
         product = await Product.findById(item.productId);
         if (!product) {
           return res.status(404).json({ message: `Product ${item.productId} not found` });
         }
+      } else {
+        return res.status(400).json({ message: `Invalid product ID format: ${item.productId}` });
       }
 
       if (product.stock < item.quantity) {

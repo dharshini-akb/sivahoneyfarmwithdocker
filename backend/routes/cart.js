@@ -21,7 +21,7 @@ router.get('/', auth, async (req, res) => {
     const items = await Promise.all(cart.items.map(async (item) => {
       const productId = item.product.toString();
       
-      if (productId.startsWith('fs_')) {
+      if (productId && productId.startsWith('fs_')) {
         // Extract filename from fs_#_filename format
         const filename = productId.replace(/^fs_\d+_/, '');
         return {
@@ -36,8 +36,8 @@ router.get('/', auth, async (req, res) => {
             category: 'organic'
           }
         };
-      } else {
-        const product = await Product.findById(item.product).select('name price image category');
+      } else if (productId && mongoose.Types.ObjectId.isValid(productId)) {
+        const product = await Product.findById(productId).select('name price image category');
         if (product) {
           return {
             productId: product._id,
@@ -67,14 +67,17 @@ router.post('/', auth, async (req, res) => {
 
     // Validate product (handle filesystem products)
     let product;
-    if (productId.startsWith('fs_')) {
+    if (productId && typeof productId === 'string' && productId.startsWith('fs_')) {
       // Filesystem product - don't check DB
       product = { _id: productId, price: 500 };
-    } else {
+    } else if (productId && mongoose.Types.ObjectId.isValid(productId)) {
       product = await Product.findById(productId);
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
+    } else {
+      // Not a valid ObjectId and not an fs_ product
+      return res.status(400).json({ message: 'Invalid product ID format' });
     }
 
     let cart = await Cart.findOne({ user: req.user.id });

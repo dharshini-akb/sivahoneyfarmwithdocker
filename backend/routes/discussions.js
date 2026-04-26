@@ -141,7 +141,7 @@ router.get('/admin/all', adminAuth, async (req, res) => {
           _id: comment.product,
           name: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         };
-      } else if (comment.product) {
+      } else if (comment.product && mongoose.Types.ObjectId.isValid(comment.product)) {
         // Try to find in DB
         const product = await Product.findById(comment.product).select('name');
         if (product) {
